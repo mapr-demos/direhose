@@ -22,12 +22,29 @@ import getopt
 
 DEBUG = False
 
-# defines host and port to stream the data out via UDP
-STREAM_HOST = '127.0.0.1'
-STREAM_PORT = 7654
+# name of the config file, read on start-up and overwriting defaults
+DEFAULT_CONFIG_FILE = './direhose.conf'
 
-# defines the interval in sec where progress will be reported to stdout
-REPORTING_INTERVAL = 10 
+# default starting directory for the walk
+DEFAULT_START_DIR = '.'
+
+# default source type (send to stdout)
+DEFAULT_SOURCE_TYPE = 'local'
+
+# default source mode (send metadata only)
+DEFAULT_SOURCE_MODE = 'metadata'
+
+# defaults for host and port to stream the data out via network
+DEFAULT_STREAM_HOST = '127.0.0.1'
+DEFAULT_STREAM_PORT = 7654
+
+direhose_config = {
+  'start_dir' : DEFAULT_START_DIR,
+  'source_type' : DEFAULT_SOURCE_TYPE,
+  'source_mode' : DEFAULT_SOURCE_MODE,
+  'network_host' : DEFAULT_STREAM_HOST,
+  'network_port' : DEFAULT_STREAM_PORT
+}
 
 out_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # use UDP
 
@@ -42,48 +59,78 @@ else:
 ################################################################################
 ## API
 
-def _fs_create_package():
+def _fs_create_package(f):
   fs_package = {
-    'timestamp' : str(datetime.datetime.now().isoformat()),
-    'name' : 'TBD',
-    'size' : 'TBD'
+    'package_ts' : str(datetime.datetime.now().isoformat()),
+    'name' : '-',
+    'size' : '-',
+    'last_modification' : '-'
   }    
-  logging.debug('FS package created: %s' %fs_package)
-  return (fs_package, sys.getsizeof(str(fs_package)))
+  try:
+    fs_package['name'] = os.path.abspath(f)
+    fs_package['size'] = os.path.getsize(f)
+    fs_package['last_modification'] = os.path.getmtime(f)
+  except:
+    pass
+  logging.debug('Package created: %s' %fs_package)
+  return fs_package
 
-def _send_package(out_socket, package):
-    out_socket.sendto(str(package) + '\n', (STREAM_HOST, STREAM_PORT))
+def _send_package(package):
+    try:
+      if direhose_config['source_type'] == 'local':
+        print(json.dumps(package))
+      else:
+        out_socket.sendto(
+          str(json.dumps(package)) + '\n',
+          (direhose_config['network_host'], direhose_config['network_port'])
+        )
+    except:
+      pass
 
-def walk(start_dir):
+def walk():
+  start_dir = direhose_config['start_dir']
   for root, dirs, files in os.walk(start_dir):
-    print('%s' %root)
+    _send_package(_fs_create_package(root))
     for f in files:
-      print(' %s' %f)
-      # (package, package_size) = _fs_create_package()
-      # _send_fintran(out_socket, json.dumps(package))
+      _send_package(_fs_create_package(os.path.join(root, f)))
+
+def apply_config(config_file): 
+  cf = os.path.abspath(config_file)
+  if os.path.exists(cf):
+    logging.debug('Using config file %s, parsing settings ...' %cf)
+    lines = tuple(open(cf, 'r'))
+    for line in lines:
+      l = str(line).strip()
+      if l and not l.startswith('#'): # non-empty or non-comment line
+        (setting_key, setting_value) = l.split('=')
+        direhose_config[setting_key] = setting_value
+        logging.debug('For %s using %s' %(setting_key, direhose_config[setting_key]))
+  else:
+    logging.debug('No config file found, using defaults')
 
 def usage():
-  print('Usage: python direhose.py [start directory]\n')
+  print('Usage: python direhose.py [configuration file]\n')
+  print('Note that the "configuration file" parameter is optional.')
+  print('If none is provided, I will use %s' %DEFAULT_CONFIG_FILE)
 
 
 ################################################################################
 ## main script
 
 if __name__ == '__main__':
-  start_dir = '.'  
+  config_file = DEFAULT_CONFIG_FILE 
   try:
     opts, args = getopt.getopt(sys.argv[1:], 'h', ['help'])
-    
     for opt, arg in opts:
       if opt in ('-h', '--help'):
         usage()
         sys.exit()
     try:
-      start_dir = args[0]
+      config_file = args[0]
     except:
       pass
-  
-    walk(start_dir)
+    apply_config(config_file)
+    walk()
   except getopt.GetoptError, err:
     print str(err)
     usage()
