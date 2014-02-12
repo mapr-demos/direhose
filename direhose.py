@@ -76,16 +76,19 @@ def _fs_create_package(f):
   return fs_package
 
 def _send_package(package):
+    logging.debug('Preparing to send package ...')
     try:
       if direhose_config['source_type'] == 'local':
         print(json.dumps(package))
+        logging.debug('Package sent to stdout.')
       else:
         out_socket.sendto(
           str(json.dumps(package)) + '\n',
-          (direhose_config['network_host'], direhose_config['network_port'])
+          (direhose_config['network_host'], int(direhose_config['network_port']))
         )
-    except:
-      pass
+        logging.debug('Package sent to %s:%s' %(direhose_config['network_host'], direhose_config['network_port']))      
+    except Exception, e:
+      logging.error('%s' %e)
 
 def walk():
   start_dir = direhose_config['start_dir']
