@@ -21,6 +21,7 @@ import getopt
 ## config
 
 DEBUG = False
+READ_BUFFER_SIZE = 1000 
 
 # name of the config file, read on start-up and overwriting defaults
 DEFAULT_CONFIG_FILE = './direhose.conf'
@@ -76,8 +77,8 @@ def _create_package(f):
   return package
 
 def _send_meta(package):
-  f = package['name']
-  logging.debug('Preparing to send metadata of %s ...' %f)
+  fn = package['name']
+  logging.debug('Preparing to send metadata of %s ...' %fn)
   try:
     if direhose_config['source_type'] == 'local':
       print(json.dumps(package))
@@ -92,18 +93,31 @@ def _send_meta(package):
     logging.error('%s' %e)
     
 def _send_data(package):
-  f = package['name']
-  logging.debug('Preparing to send content of %s ...' %f)
+  fn = package['name']
+  logging.debug('Preparing to send content of %s ...' %fn)
+  
+  if os.path.isdir(fn):
+    logging.debug('This is a directory, skipping it.')
+    return
+    
   try:
     if direhose_config['source_type'] == 'local':
-      print('xxx')
-      logging.debug('Metadata sent to stdout.')
+      with open(fn, 'rb') as f:
+          content = f.read(READ_BUFFER_SIZE)
+          while content != '':
+            sys.stdout.write(content)
+            content = f.read(READ_BUFFER_SIZE)
+      logging.debug('Data sent to stdout.')
     else:
-      out_socket.sendto(
-        'xxx' + '\n',
-        (direhose_config['network_host'], int(direhose_config['network_port']))
-      )
-      logging.debug('Metadata sent to %s:%s' %(direhose_config['network_host'], direhose_config['network_port']))      
+      with open(fn, 'rb') as f:
+          content = f.read(READ_BUFFER_SIZE)
+          while content != '':
+            out_socket.sendto(
+              content,
+              (direhose_config['network_host'], int(direhose_config['network_port']))
+            )
+            content = f.read(READ_BUFFER_SIZE)
+      logging.debug('Data sent to %s:%s' %(direhose_config['network_host'], direhose_config['network_port']))      
   except Exception, e:
     logging.error('%s' %e)
 
