@@ -59,43 +59,71 @@ else:
 ################################################################################
 ## API
 
-def _fs_create_package(f):
-  fs_package = {
+def _create_package(f):
+  package = {
     'package_ts' : str(datetime.datetime.now().isoformat()),
     'name' : '-',
     'size' : '-',
     'last_modification' : '-'
   }    
   try:
-    fs_package['name'] = os.path.abspath(f)
-    fs_package['size'] = os.path.getsize(f)
-    fs_package['last_modification'] = os.path.getmtime(f)
+    package['name'] = os.path.abspath(f)
+    package['size'] = os.path.getsize(f)
+    package['last_modification'] = os.path.getmtime(f)
   except:
     pass
-  logging.debug('Package created: %s' %fs_package)
-  return fs_package
+  logging.debug('Package created: %s' %package)
+  return package
+
+def _send_meta(package):
+  f = package['name']
+  logging.debug('Preparing to send metadata of %s ...' %f)
+  try:
+    if direhose_config['source_type'] == 'local':
+      print(json.dumps(package))
+      logging.debug('Metadata sent to stdout.')
+    else:
+      out_socket.sendto(
+        str(json.dumps(package)) + '\n',
+        (direhose_config['network_host'], int(direhose_config['network_port']))
+      )
+      logging.debug('Metadata sent to %s:%s' %(direhose_config['network_host'], direhose_config['network_port']))      
+  except Exception, e:
+    logging.error('%s' %e)
+    
+def _send_data(package):
+  f = package['name']
+  logging.debug('Preparing to send content of %s ...' %f)
+  try:
+    if direhose_config['source_type'] == 'local':
+      print('xxx')
+      logging.debug('Metadata sent to stdout.')
+    else:
+      out_socket.sendto(
+        'xxx' + '\n',
+        (direhose_config['network_host'], int(direhose_config['network_port']))
+      )
+      logging.debug('Metadata sent to %s:%s' %(direhose_config['network_host'], direhose_config['network_port']))      
+  except Exception, e:
+    logging.error('%s' %e)
 
 def _send_package(package):
-    logging.debug('Preparing to send package ...')
-    try:
-      if direhose_config['source_type'] == 'local':
-        print(json.dumps(package))
-        logging.debug('Package sent to stdout.')
-      else:
-        out_socket.sendto(
-          str(json.dumps(package)) + '\n',
-          (direhose_config['network_host'], int(direhose_config['network_port']))
-        )
-        logging.debug('Package sent to %s:%s' %(direhose_config['network_host'], direhose_config['network_port']))      
-    except Exception, e:
-      logging.error('%s' %e)
-
+  if direhose_config['source_mode'] == 'metadata':
+    _send_meta(package)
+  elif direhose_config['source_mode'] == 'data':
+    _send_data(package)
+  elif direhose_config['source_mode'] == 'all':
+    _send_meta(package)
+    _send_data(package)
+  else:
+    pass
+    
 def walk():
   start_dir = direhose_config['start_dir']
   for root, dirs, files in os.walk(start_dir):
-    _send_package(_fs_create_package(root))
+    _send_package(_create_package(root))
     for f in files:
-      _send_package(_fs_create_package(os.path.join(root, f)))
+      _send_package(_create_package(os.path.join(root, f)))
 
 def apply_config(config_file): 
   cf = os.path.abspath(config_file)
