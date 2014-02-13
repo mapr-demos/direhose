@@ -107,6 +107,7 @@ def _send_data(package):
           while content != '':
             sys.stdout.write(content)
             content = f.read(READ_BUFFER_SIZE)
+      sys.stdout.write('\n')
       logging.debug('Data sent to stdout.')
     else:
       with open(fn, 'rb') as f:
@@ -117,6 +118,10 @@ def _send_data(package):
               (direhose_config['network_host'], int(direhose_config['network_port']))
             )
             content = f.read(READ_BUFFER_SIZE)
+      out_socket.sendto(
+        '\n',
+        (direhose_config['network_host'], int(direhose_config['network_port']))
+      )
       logging.debug('Data sent to %s:%s' %(direhose_config['network_host'], direhose_config['network_port']))      
   except Exception, e:
     logging.error('%s' %e)
