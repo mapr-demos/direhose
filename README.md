@@ -1,6 +1,6 @@
 # direhose
 
-This util traverses POSIX compliant filesystems and generates a UDP data stream 
+This util traverses POSIX compliant filesystems and generates a data stream 
 out of the discovered file and directory information. The name `direhose` is a 
 portmanteau word, combining *directory* and *firehose*.
 
@@ -24,27 +24,85 @@ it will revert to the following:
 * default source type: send packages to stdout
 * default source mode: send file/directory metadata only
 
-### Example session
+## Example sessions
+
+The below examples assume that the configuration is set to `source_type=network`.
+
+### Echo sink
 
 In one terminal launch the echo sink like so:
 
-      [~/Documents/repos/direhose/sinks] $ ./echo_sink.sh
-      Listening on port 7654 for packages from direhose ...
+    [~/Documents/repos/direhose/sinks] $ ./echo_sink.sh
+    Listening on port 7654 for packages from direhose ...
 
 Then, in a second terminal go:
       
-      [~/Documents/repos/direhose] $ python direhose.py      
+    [~/Documents/repos/direhose] $ python direhose.py      
 
 ... and have a look at the first terminal again:
 
-      [~/Documents/repos/direhose/sinks] $ ./echo_sink.sh
-      Listening on port 7654 for packages from direhose ...
-      {"package_ts": "2014-02-12T14:40:44.372021", "name": "/Users/mhausenblas2/Documents/repos/direhose", "last_modification": 1392188354.0, "size": 272}
-      {"package_ts": "2014-02-12T14:40:44.372177", "name": "/Users/mhausenblas2/Documents/repos/direhose/.DS_Store", "last_modification": 1392215394.0, "size": 12292}
-      {"package_ts": "2014-02-12T14:40:44.372272", "name": "/Users/mhausenblas2/Documents/repos/direhose/direhose.conf", "last_modification": 1392215382.0, "size": 1770}
-      ...
+    [~/Documents/repos/direhose/sinks] $ ./echo_sink.sh
+    Listening on port 7654 for packages from direhose ...
+    {"package_ts": "2014-02-12T14:40:44.372021", "name": "/Users/mhausenblas2/Documents/repos/direhose", "last_modification": 1392188354.0, "size": 272}
+    {"package_ts": "2014-02-12T14:40:44.372177", "name": "/Users/mhausenblas2/Documents/repos/direhose/.DS_Store", "last_modification": 1392215394.0, "size": 12292}
+    {"package_ts": "2014-02-12T14:40:44.372272", "name": "/Users/mhausenblas2/Documents/repos/direhose/direhose.conf", "last_modification": 1392215382.0, "size": 1770}
+    ...
 
-### Configuration
+### Modification time histogram sink
+
+In one terminal launch the modification time histogram sink like so:
+
+    [~/Documents/repos/direhose/sinks] $ python work_histo.py
+    Listening for incoming data on port 7654
+      
+Then, in a second terminal go:
+      
+    [~/Documents/repos/direhose] $ python direhose.py      
+
+... and have a look at the first terminal again:
+
+    [~/Documents/repos/direhose/sinks] $ python work_histo.py
+    Listening for incoming data on port 7654
+    ............................................................................
+    ............................................................................
+    ......................................
+    Data received, generating histogram ...
+     0h: ******                                                                           (497)
+     1h: **                                                                               (157)
+     2h: *                                                                                (15)
+     4h: *                                                                                (17)
+     5h: **                                                                               (155)
+     6h: *******                                                                          (568)
+     7h: ******************************************************************************** (6020)
+     8h: **                                                                               (216)
+     9h: ***                                                                              (253)
+    10h: ***********************************                                              (2640)
+    11h: ***********************************************                                  (3563)
+    12h: *******                                                                          (597)
+    13h: ********************************************************************             (5182)
+    14h: ********************                                                             (1545)
+    15h: ***************************                                                      (2038)
+    16h: *************                                                                    (983)
+    17h: **********                                                                       (811)
+    18h: *******                                                                          (530)
+    19h: ****                                                                             (368)
+    20h: ****************                                                                 (1256)
+    21h: *                                                                                (108)
+    22h: ***                                                                              (261)
+    23h: *                                                                                (25)
+
+In the output you see, for example that 5182 files or directories have been
+modified in the hour starting at 13:00.
+
+### Size distribution sink
+
+TBD
+
+### File extension table sink
+
+TBD
+
+## Configuration
 
 The default config file [direhose.conf](direhose.conf) looks as follows:
 
@@ -98,9 +156,3 @@ The default config file [direhose.conf](direhose.conf) looks as follows:
 ## License
 
 [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.html).
-
-
-ToDo:
-
-* network, data stream
-* usage example
