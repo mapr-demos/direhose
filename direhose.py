@@ -22,6 +22,7 @@ import getopt
 
 DEBUG = False
 READ_BUFFER_SIZE = 1000 
+END_OF_STREAM_MSG = 'EOS'
 
 # name of the config file, read on start-up and overwriting defaults
 DEFAULT_CONFIG_FILE = './direhose.conf'
@@ -136,13 +137,27 @@ def _send_package(package):
     _send_data(package)
   else:
     pass
-    
+
+def _send_eos():
+  logging.debug('End of stream')
+  try:
+    if direhose_config['source_type'] == 'local':
+      print(END_OF_STREAM_MSG)
+    else:
+      out_socket.sendto(
+        END_OF_STREAM_MSG,
+        (direhose_config['network_host'], int(direhose_config['network_port']))
+      )
+  except Exception, e:
+    logging.error('%s' %e)
+
 def walk():
   start_dir = direhose_config['start_dir']
   for root, dirs, files in os.walk(start_dir):
     _send_package(_create_package(root))
     for f in files:
       _send_package(_create_package(os.path.join(root, f)))
+  _send_eos()
 
 def apply_config(config_file): 
   cf = os.path.abspath(config_file)
