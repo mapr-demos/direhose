@@ -47,6 +47,10 @@ Then, in a second terminal go:
     {"package_ts": "2014-02-12T14:40:44.372177", "name": "/Users/mhausenblas2/Documents/repos/direhose/.DS_Store", "last_modification": 1392215394.0, "size": 12292}
     {"package_ts": "2014-02-12T14:40:44.372272", "name": "/Users/mhausenblas2/Documents/repos/direhose/direhose.conf", "last_modification": 1392215382.0, "size": 1770}
     ...
+    EOS
+
+Note that the end of the package stream is marked with `EOS` (for End Of Stream)
+which can be conveniently used in sinks to stop listening to incoming data. 
 
 ### Modification time histogram sink
 
