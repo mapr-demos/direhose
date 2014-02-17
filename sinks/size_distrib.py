@@ -67,7 +67,7 @@ def build_size_dist(dh_port):
   largest = max(file_sizes)
   median_size = median(file_sizes)
   avg_size = overall_fsize / len(file_sizes)
-  pretty_print_fsize('Total size of files/directoriesllest', overall_fsize)
+  pretty_print_fsize('Total size of files/directories', overall_fsize)
   pretty_print_fsize('Smallest', smallest)
   pretty_print_fsize('Largest', largest)
   pretty_print_fsize('Median', median_size)

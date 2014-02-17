@@ -100,7 +100,36 @@ modified in the hour starting at 13:00.
 
 ### Size distribution sink
 
-TBD
+In one terminal launch the size distribution sink like as follows:
+
+    [~/Documents/repos/direhose/sinks] $ python size_distrib.py
+    Listening for incoming data on port 7654
+      
+Then, in a second terminal go:
+      
+    [~/Documents/repos/direhose] $ python direhose.py      
+
+... and have a look at the first terminal again:
+
+
+    [~/Documents/repos/direhose/sinks] $ python size_distrib.py
+    Listening for incoming data on port 7654
+    ............................................................................
+    ............................................................................
+    .......
+    Data received, generating distribution ...
+    Total number of files/directories: 159
+    Total size of files/directories: 100.5 kB
+    Smallest: 11 Bytes
+    Largest: 12.0 kB
+    Median: 189 Bytes
+    Average: 646 Bytes
+    Distribution:
+     158 small files (less than 10kB)
+     1 medium files (between 10kB and 10MB)
+     0 large files (more than 10MB)
+
+The output should be self-explaining.
 
 ### File extension table sink
 
