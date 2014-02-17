@@ -131,9 +131,32 @@ Then, in a second terminal go:
 
 The output should be self-explaining.
 
-### File extension table sink
+### File types sink
 
-TBD
+In one terminal launch the file types sink like as follows:
+
+    [~/Documents/repos/direhose/sinks] $ python file_types.py
+    Listening for incoming data on port 7654
+      
+Then, in a second terminal go:
+      
+    [~/Documents/repos/direhose] $ python direhose.py      
+
+... and have a look at the first terminal again:
+
+
+    [~/Documents/repos/direhose/sinks] $ python size_distrib.py
+    Listening for incoming data on port 7654
+    ............................................................................
+    ............................................................................
+    .......
+    Data received, generating file types summary ...
+    Of the overall 170 files and directories inspected:
+     95.9% (163) are of unknown type.
+     2.4% (4) are of type .py
+     0.6% (1) are of type .sh
+     0.6% (1) are of type .md
+     0.6% (1) are of type .conf
 
 ## Configuration
 
